@@ -2,116 +2,142 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>啤酒品牌 Attributes 看板</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
 
-  /* Header */
-  .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #1e3a5f; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #ef4444, #f97316); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .logo-text { font-size: 18px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.3px; }
-  .logo-sub { font-size: 11px; color: #64748b; margin-top: 1px; }
-  .header-tag { background: #1e3a5f; border: 1px solid #2563eb33; color: #60a5fa; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+  /* ── Header ── */
+  .header { background: #1e293b; border-bottom: 1px solid #1e3a5f; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #ef4444, #f97316); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .logo-text { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+  .logo-sub { font-size: 10px; color: #64748b; }
+  .header-tag { background: #1e3a5f; color: #60a5fa; font-size: 10px; padding: 3px 8px; border-radius: 20px; white-space: nowrap; display: none; }
+  @media (min-width: 640px) { .header-tag { display: block; } .header { padding: 16px 24px; } .logo-icon { width: 32px; height: 32px; font-size: 16px; } .logo-text { font-size: 18px; } }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 0; padding: 0 32px; background: #1e293b; border-bottom: 1px solid #1e3a5f; }
-  .tab { padding: 14px 24px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
-  .tab:hover { color: #94a3b8; }
+  /* ── Tabs ── */
+  .tabs { display: flex; background: #1e293b; border-bottom: 1px solid #1e3a5f; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1; min-width: 80px; padding: 12px 8px; font-size: 12px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; text-align: center; white-space: nowrap; }
   .tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+  @media (min-width: 640px) { .tab { font-size: 13px; padding: 14px 24px; flex: none; } }
 
-  /* Main layout */
-  .main { display: flex; gap: 0; height: calc(100vh - 112px); }
+  /* ── Filter bar (mobile: horizontal scroll strip) ── */
+  .filter-bar { background: #1e293b; border-bottom: 1px solid #1e3a5f; padding: 10px 14px; }
+  .filter-label { font-size: 10px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .chips-row { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; border: 1px solid #1e3a5f; background: #0f172a; cursor: pointer; transition: all 0.15s; font-size: 12px; color: #94a3b8; }
+  .chip.selected { background: #1e3a5f; border-color: #3b82f6; color: #e2e8f0; }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .chip-check { font-size: 9px; color: #3b82f6; }
 
-  /* Sidebar */
-  .sidebar { width: 260px; flex-shrink: 0; background: #1e293b; border-right: 1px solid #1e3a5f; padding: 20px; overflow-y: auto; }
-  .sidebar-section { margin-bottom: 24px; }
-  .sidebar-title { font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
-  
-  /* Brand chips */
-  .brand-list { display: flex; flex-direction: column; gap: 6px; }
-  .brand-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; }
-  .brand-chip:hover { background: #263350; }
-  .brand-chip.selected { background: #1e3a5f; border-color: #2563eb44; }
-  .brand-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .brand-name { font-size: 13px; color: #cbd5e1; flex: 1; }
-  .brand-count { font-size: 10px; color: #475569; }
-  .brand-check { font-size: 12px; color: #3b82f6; opacity: 0; }
-  .brand-chip.selected .brand-check { opacity: 1; }
-
-  /* Attribute filter */
-  .attr-search { width: 100%; background: #0f172a; border: 1px solid #1e3a5f; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #cbd5e1; outline: none; margin-bottom: 10px; }
+  /* ── Attr filter (collapsible panel) ── */
+  .attr-panel { background: #1e293b; border-bottom: 1px solid #1e3a5f; overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+  .attr-panel.open { max-height: 220px; }
+  .attr-panel-inner { padding: 10px 14px; }
+  .attr-search { width: 100%; background: #0f172a; border: 1px solid #1e3a5f; border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #cbd5e1; outline: none; margin-bottom: 8px; }
   .attr-search:focus { border-color: #2563eb; }
-  .attr-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
-  .attr-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-  .attr-item:hover { background: #263350; }
-  .attr-item.selected { background: #1e3a5f; }
-  .attr-checkbox { width: 14px; height: 14px; border: 1.5px solid #475569; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
-  .attr-item.selected .attr-checkbox { background: #3b82f6; border-color: #3b82f6; color: white; }
-  .attr-label { font-size: 12px; color: #94a3b8; flex: 1; }
-  .attr-type { font-size: 10px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
-  .attr-type.E { background: #7c3aed22; color: #a78bfa; }
-  .attr-type.F { background: #0369a122; color: #38bdf8; }
+  .attr-grid { display: flex; flex-wrap: wrap; gap: 5px; max-height: 120px; overflow-y: auto; }
+  .attr-tag { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 5px; border: 1px solid #1e3a5f; background: #0f172a; cursor: pointer; font-size: 11px; color: #94a3b8; transition: all 0.15s; }
+  .attr-tag.selected { background: #1e3a5f; border-color: #3b82f6; color: #e2e8f0; }
+  .attr-type-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; }
+  .attr-type-badge.E { background: #7c3aed33; color: #a78bfa; }
+  .attr-type-badge.F { background: #0369a133; color: #38bdf8; }
+  .toggle-attrs-btn { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #60a5fa; cursor: pointer; padding: 4px 0; }
+  .toggle-attrs-btn svg { transition: transform 0.3s; }
+  .toggle-attrs-btn.open svg { transform: rotate(180deg); }
 
-  /* Content area */
-  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  /* ── Desktop sidebar (hidden on mobile) ── */
+  .desktop-sidebar { display: none; }
+  @media (min-width: 900px) {
+    .filter-bar { display: none; }
+    .attr-panel { display: none; }
+    .desktop-sidebar { display: flex; flex-direction: column; width: 240px; flex-shrink: 0; background: #1e293b; border-right: 1px solid #1e3a5f; padding: 16px; overflow-y: auto; }
+    .ds-section { margin-bottom: 20px; }
+    .ds-title { font-size: 10px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+    .ds-brand-list { display: flex; flex-direction: column; gap: 5px; }
+    .ds-brand-chip { display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 7px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+    .ds-brand-chip:hover { background: #263350; }
+    .ds-brand-chip.selected { background: #1e3a5f; border-color: #2563eb44; }
+    .ds-brand-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .ds-brand-name { font-size: 12px; color: #cbd5e1; flex: 1; }
+    .ds-brand-count { font-size: 10px; color: #475569; }
+    .ds-brand-check { font-size: 11px; color: #3b82f6; opacity: 0; }
+    .ds-brand-chip.selected .ds-brand-check { opacity: 1; }
+    .ds-attr-search { width: 100%; background: #0f172a; border: 1px solid #1e3a5f; border-radius: 7px; padding: 7px 10px; font-size: 11px; color: #cbd5e1; outline: none; margin-bottom: 8px; }
+    .ds-attr-search:focus { border-color: #2563eb; }
+    .ds-attr-list { display: flex; flex-direction: column; gap: 3px; max-height: 240px; overflow-y: auto; }
+    .ds-attr-item { display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+    .ds-attr-item:hover { background: #263350; }
+    .ds-attr-item.selected { background: #1e3a5f; }
+    .ds-attr-cb { width: 13px; height: 13px; border: 1.5px solid #475569; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+    .ds-attr-item.selected .ds-attr-cb { background: #3b82f6; border-color: #3b82f6; color: white; }
+    .ds-attr-label { font-size: 11px; color: #94a3b8; flex: 1; }
+  }
 
-  /* Panel cards */
-  .panel-grid { display: grid; gap: 20px; }
-  .panel-grid.cols-2 { grid-template-columns: 1fr 1fr; }
-  .panel-grid.cols-1 { grid-template-columns: 1fr; }
+  /* ── Main layout ── */
+  .main { display: flex; }
+  .content { flex: 1; min-width: 0; padding: 14px; overflow-x: hidden; }
+  @media (min-width: 640px) { .content { padding: 20px 24px; } }
 
-  .card { background: #1e293b; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px; }
-  .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-  .card-title { font-size: 14px; font-weight: 600; color: #f1f5f9; }
-  .card-sub { font-size: 11px; color: #475569; margin-top: 3px; }
-  .card-tag { font-size: 10px; padding: 3px 8px; border-radius: 12px; }
-  .tag-industry { background: #f97316; color: #fff; } /* not used but keeps */
+  /* ── Cards ── */
+  .card { background: #1e293b; border: 1px solid #1e3a5f; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  @media (min-width: 640px) { .card { padding: 18px 20px; margin-bottom: 18px; } }
+  .card-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
+  .card-sub { font-size: 11px; color: #475569; margin-bottom: 12px; }
+  @media (min-width: 640px) { .card-title { font-size: 14px; } }
 
-  /* Chart containers */
-  .chart-box { width: 100%; height: 320px; }
-  .chart-box.tall { height: 420px; }
-  .chart-box.short { height: 240px; }
-
-  /* Summary table */
-  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .summary-table th { text-align: left; padding: 8px 10px; color: #475569; font-weight: 600; font-size: 11px; border-bottom: 1px solid #1e3a5f; }
-  .summary-table td { padding: 10px 10px; border-bottom: 1px solid #1e3a5f22; color: #cbd5e1; }
-  .summary-table tr:hover td { background: #263350; }
-  .tgi-bar { height: 6px; border-radius: 3px; background: #1e3a5f; overflow: hidden; margin-top: 4px; }
-  .tgi-fill { height: 100%; border-radius: 3px; }
-
-  /* Metric chips */
-  .metrics-row { display: flex; gap: 12px; margin-bottom: 20px; }
-  .metric-card { flex: 1; background: #0f172a; border: 1px solid #1e3a5f; border-radius: 10px; padding: 14px 16px; }
-  .metric-val { font-size: 26px; font-weight: 700; color: #f1f5f9; }
-  .metric-label { font-size: 11px; color: #475569; margin-top: 3px; }
-  .metric-delta { font-size: 11px; margin-top: 4px; }
+  /* ── Metrics row ── */
+  .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media (min-width: 640px) { .metrics-row { grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; } }
+  .metric-card { background: #0f172a; border: 1px solid #1e3a5f; border-radius: 9px; padding: 12px 14px; }
+  .metric-val { font-size: 20px; font-weight: 700; color: #f1f5f9; line-height: 1.1; }
+  .metric-label { font-size: 10px; color: #475569; margin-top: 3px; }
+  .metric-delta { font-size: 10px; margin-top: 3px; color: #60a5fa; }
   .metric-delta.up { color: #34d399; }
-  .metric-delta.neutral { color: #60a5fa; }
+  @media (min-width: 640px) { .metric-val { font-size: 24px; } .metric-label { font-size: 11px; } }
 
-  /* Tab panels */
+  /* ── Two-col grid (desktop only) ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 780px) { .grid-2 { grid-template-columns: 1fr 1fr; gap: 18px; } }
+
+  /* ── Chart boxes ── */
+  .chart-box { width: 100%; height: 260px; }
+  .chart-box.tall { height: 320px; }
+  .chart-box.xtall { height: 380px; }
+  @media (min-width: 640px) { .chart-box { height: 300px; } .chart-box.tall { height: 380px; } .chart-box.xtall { height: 440px; } }
+
+  /* ── Insight ── */
+  .insight { background: #0f172a; border-left: 3px solid #3b82f6; border-radius: 0 7px 7px 0; padding: 9px 12px; margin-top: 12px; font-size: 11px; color: #94a3b8; line-height: 1.6; }
+  .insight strong { color: #60a5fa; }
+
+  /* ── Tab panels ── */
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
+  /* ── Compare table ── */
+  .compare-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 400px; }
+  .summary-table th { text-align: left; padding: 7px 8px; color: #475569; font-weight: 600; font-size: 10px; border-bottom: 1px solid #1e3a5f; white-space: nowrap; }
+  .summary-table td { padding: 8px 8px; border-bottom: 1px solid #1e3a5f22; color: #cbd5e1; white-space: nowrap; }
+  .summary-table tr:hover td { background: #263350; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
-  /* Insight box */
-  .insight { background: #0f172a; border: 1px solid #2563eb33; border-left: 3px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-top: 14px; font-size: 12px; color: #94a3b8; line-height: 1.6; }
-  .insight strong { color: #60a5fa; }
-
-  /* Empty state */
-  .empty { text-align: center; color: #475569; padding: 60px 20px; font-size: 13px; }
+  /* ── Empty ── */
+  .empty { text-align: center; color: #475569; padding: 50px 20px; font-size: 13px; }
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
   <div class="logo">
     <div class="logo-icon">🍺</div>
@@ -120,26 +146,49 @@
       <div class="logo-sub">啤酒行业 · 小红书内容生态分析</div>
     </div>
   </div>
-  <div class="header-tag">数据来源：啤酒笔记V2 · 1451条 · 484M曝光</div>
+  <div class="header-tag">1451条笔记 · 484M曝光</div>
 </div>
 
+<!-- Tabs -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('industry')">🌐 行业全景</div>
   <div class="tab" onclick="switchTab('brand')">🎯 品牌诊断</div>
   <div class="tab" onclick="switchTab('compare')">⚡ 竞品对比</div>
 </div>
 
-<div class="main">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-title">品牌选择</div>
-      <div class="brand-list" id="brandList"></div>
+<!-- Mobile filter bar: brand chips -->
+<div class="filter-bar">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <div class="filter-label">选择品牌</div>
+    <div class="toggle-attrs-btn" id="toggleAttrsBtn" onclick="toggleAttrs()">
+      <span>筛选 Attributes</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-title">Attributes 筛选</div>
-      <input class="attr-search" type="text" placeholder="搜索 attribute..." id="attrSearch" oninput="filterAttrs()">
-      <div class="attr-list" id="attrList"></div>
+  </div>
+  <div class="chips-row" id="brandChips"></div>
+</div>
+
+<!-- Mobile attr panel (collapsible) -->
+<div class="attr-panel" id="attrPanel">
+  <div class="attr-panel-inner">
+    <input class="attr-search" type="text" placeholder="搜索 attribute..." id="mAttrSearch" oninput="filterAttrs('m')">
+    <div class="attr-grid" id="mAttrList"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Desktop sidebar -->
+  <div class="desktop-sidebar" id="desktopSidebar">
+    <div class="ds-section">
+      <div class="ds-title">品牌选择</div>
+      <div class="ds-brand-list" id="dsBrandList"></div>
+    </div>
+    <div class="ds-section">
+      <div class="ds-title">Attributes 筛选</div>
+      <input class="ds-attr-search" type="text" placeholder="搜索..." id="dsAttrSearch" oninput="filterAttrs('ds')">
+      <div class="ds-attr-list" id="dsAttrList"></div>
     </div>
   </div>
 
@@ -148,140 +197,95 @@
     <!-- Tab 1: Industry -->
     <div class="tab-panel active" id="panel-industry">
       <div class="metrics-row" id="industryMetrics"></div>
-      <div class="panel-grid cols-2">
+      <div class="grid-2">
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">行业 Attributes 热度排行</div>
-              <div class="card-sub">按曝光加权占比，全品牌汇总</div>
-            </div>
-          </div>
+          <div class="card-title">行业 Attributes 热度排行</div>
+          <div class="card-sub">曝光加权占比 · 全品牌汇总</div>
           <div class="chart-box" id="chart-industry-bar"></div>
-          <div class="insight">
-            <strong>核心发现：</strong>Knowledgeable（知识科普）以 <strong>26.3%</strong> 居首，是啤酒赛道最主导的内容属性——品牌内容生态以干货教育为基调，情感娱乐型属性（Having fun / Relaxing）合计占 <strong>23%</strong>，仪式感/冒险探索构成第二梯队。
-          </div>
+          <div class="insight"><strong>核心发现：</strong>Knowledgeable（知识科普）以 <strong>26%+</strong> 居首，Having fun + Relaxing/chill 合计 <strong>23%</strong>，是啤酒赛道内容的三大主轴。</div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Emotional vs Functional 分布</div>
-              <div class="card-sub">情感型 vs 功能型 attribute 占比对比</div>
-            </div>
-          </div>
+          <div class="card-title">Emotional vs Functional 分布</div>
+          <div class="card-sub">情感型 vs 功能型 attribute 结构</div>
           <div class="chart-box" id="chart-industry-ef"></div>
-          <div class="insight">
-            <strong>结构洞察：</strong>啤酒赛道 <strong>Functional 属性占主导</strong>（Knowledgeable/Goes well with food/Category leader 均为功能型），Emotional 属性中 Having fun 和 Relaxing/chill 是核心——反映用户在平台上以「决策参考」而非「情绪共鸣」为主要诉求。
-          </div>
+          <div class="insight"><strong>结构洞察：</strong>Functional 属性主导（Knowledgeable/美食搭配/品类权威），用户更多以「决策参考」而非「情绪共鸣」为主要诉求。</div>
         </div>
       </div>
-      <div class="panel-grid cols-1" style="margin-top:20px">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">品牌 Attribute 矩阵</div>
-              <div class="card-sub">各品牌 × Top Attributes 曝光占比热力图</div>
-            </div>
-          </div>
-          <div class="chart-box tall" id="chart-industry-heatmap"></div>
-        </div>
+      <div class="card">
+        <div class="card-title">品牌 × Attribute 热力矩阵</div>
+        <div class="card-sub">各品牌在 Top Attributes 上的曝光占比</div>
+        <div class="chart-box xtall" id="chart-industry-heatmap"></div>
       </div>
     </div>
 
-    <!-- Tab 2: Brand Diagnosis -->
+    <!-- Tab 2: Brand -->
     <div class="tab-panel" id="panel-brand">
-      <div class="panel-grid cols-2">
+      <div class="grid-2">
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">品牌 Attribute 雷达图</div>
-              <div class="card-sub">选择1-3个品牌进行对比</div>
-            </div>
-          </div>
+          <div class="card-title">品牌 Attribute 雷达图</div>
+          <div class="card-sub">选 1-4 个品牌叠加对比</div>
           <div class="chart-box tall" id="chart-brand-radar"></div>
         </div>
         <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Attribute TGI 浓度</div>
-              <div class="card-sub">品牌 vs 行业均值的 TGI 指数（行业=100）</div>
-            </div>
-          </div>
+          <div class="card-title">Attribute TGI 浓度</div>
+          <div class="card-sub">品牌 vs 行业均值（行业=100）</div>
           <div class="chart-box tall" id="chart-brand-tgi"></div>
-          <div class="insight">
-            <strong>TGI 读法：</strong>TGI &gt; 120 = 该品牌在此属性上显著强于行业均值，是品牌差异化优势；TGI &lt; 80 = 明显弱势，存在内容缺口。
-          </div>
+          <div class="insight"><strong>TGI读法：</strong>绿色 &gt;120 = 差异化优势；红色 &lt;80 = 内容缺口。</div>
         </div>
       </div>
     </div>
 
-    <!-- Tab 3: Competitive Compare -->
+    <!-- Tab 3: Compare -->
     <div class="tab-panel" id="panel-compare">
-      <div class="panel-grid cols-1">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Attribute Association 竞品排名</div>
-              <div class="card-sub">各品牌在所选 Attributes 上的曝光占比横向对比</div>
-            </div>
-          </div>
-          <div class="chart-box tall" id="chart-compare-bar"></div>
-          <div class="insight" id="compare-insight">选择多个品牌和 Attributes 查看竞品对比分析。</div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">品牌定位散点图</div>
-              <div class="card-sub">X轴：Functional 属性强度 / Y轴：Emotional 属性强度 / 气泡大小：曝光量</div>
-            </div>
-          </div>
-          <div class="chart-box" id="chart-compare-scatter"></div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">品牌 Attribute 明细对比</div>
-              <div class="card-sub">所选品牌在所有 Attributes 上的数值对比</div>
-            </div>
-          </div>
-          <div id="compare-table-wrap"></div>
-        </div>
+      <div class="card">
+        <div class="card-title">Attribute Association 竞品排名</div>
+        <div class="card-sub">各品牌在所选 Attributes 上的曝光占比横向对比</div>
+        <div class="chart-box tall" id="chart-compare-bar"></div>
+        <div class="insight" id="compare-insight">选择多个品牌和 Attributes 查看竞品对比分析。</div>
+      </div>
+      <div class="card">
+        <div class="card-title">品牌定位散点图</div>
+        <div class="card-sub">X=Functional强度 / Y=Emotional强度 / 气泡大小=曝光量</div>
+        <div class="chart-box" id="chart-compare-scatter"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">品牌 Attribute 明细对比</div>
+        <div class="card-sub">TGI 绿色=优势 红色=缺口</div>
+        <div class="compare-wrap" id="compare-table-wrap"></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// ─── DATA ───────────────────────────────────────────────────────────────────
-
+// ─── DATA ────────────────────────────────────────────────────────────────────
 const BRANDS = [
-  { id: 'qingdao',   name: '青岛',   color: '#22c55e', notes: 894,  exposure: 264 },
-  { id: 'carlsberg', name: '嘉士伯', color: '#eab308', notes: 170,  exposure: 90.3 },
-  { id: 'heineken',  name: '喜力',   color: '#16a34a', notes: 129,  exposure: 31.4 },
-  { id: 'snow',      name: '雪花',   color: '#94a3b8', notes: 105,  exposure: 41.6 },
-  { id: 'budweiser', name: '百威',   color: '#ef4444', notes: 82,   exposure: 38.6 },
-  { id: 'corona',    name: '科罗娜', color: '#f97316', notes: 30,   exposure: 7.0  },
+  { id:'qingdao',   name:'青岛',   color:'#22c55e', notes:894,  exposure:264 },
+  { id:'carlsberg', name:'嘉士伯', color:'#eab308', notes:170,  exposure:90.3 },
+  { id:'heineken',  name:'喜力',   color:'#16a34a', notes:129,  exposure:31.4 },
+  { id:'snow',      name:'雪花',   color:'#94a3b8', notes:105,  exposure:41.6 },
+  { id:'budweiser', name:'百威',   color:'#ef4444', notes:82,   exposure:38.6 },
+  { id:'corona',    name:'科罗娜', color:'#f97316', notes:30,   exposure:7.0  },
 ];
 
-// attribute definition: type E=Emotional F=Functional
 const ATTRS_DEF = [
-  { id: 'knowledgeable',   label: 'Knowledgeable',              cn: '知识/科普',         type: 'F' },
-  { id: 'having_fun',      label: 'Having fun',                 cn: '开心享乐',           type: 'E' },
-  { id: 'relaxing',        label: 'Relaxing/chill',             cn: '放松心情',           type: 'E' },
-  { id: 'adventurous',     label: 'Adventurous',                cn: '探索/好奇心',        type: 'E' },
-  { id: 'goes_food',       label: 'Goes well with food',        cn: '美食搭配',           type: 'F' },
-  { id: 'stylish',         label: 'Stylish/trendy',             cn: '时髦潮流',           type: 'E' },
-  { id: 'category_leader', label: 'Category leader',            cn: '品类权威',           type: 'F' },
-  { id: 'easy_mix',        label: 'Easy to mix',                cn: '易于调配',           type: 'F' },
-  { id: 'celebrating',     label: 'Celebrating',                cn: '庆祝/庆贺',          type: 'E' },
-  { id: 'thirst',          label: 'Thirst-quenching',           cn: '解渴/清爽',          type: 'F' },
-  { id: 'premium',         label: 'Premium',                    cn: '高端/精品',          type: 'F' },
-  { id: 'moment_special',  label: 'Making the moment special',  cn: '让此刻特别',         type: 'E' },
-  { id: 'affordable',      label: 'Affordable',                 cn: '实惠/亲民',          type: 'F' },
-  { id: 'intl_brand',      label: 'Successful intl brand',      cn: '成功国际品牌',       type: 'F' },
-  { id: 'reducing_stress', label: 'Reducing stress',            cn: '释放压力',           type: 'E' },
+  { id:'knowledgeable',   label:'Knowledgeable',             cn:'知识/科普',     type:'F' },
+  { id:'having_fun',      label:'Having fun',                cn:'开心享乐',       type:'E' },
+  { id:'relaxing',        label:'Relaxing/chill',            cn:'放松心情',       type:'E' },
+  { id:'adventurous',     label:'Adventurous',               cn:'探索/好奇心',    type:'E' },
+  { id:'goes_food',       label:'Goes well with food',       cn:'美食搭配',       type:'F' },
+  { id:'stylish',         label:'Stylish/trendy',            cn:'时髦潮流',       type:'E' },
+  { id:'category_leader', label:'Category leader',           cn:'品类权威',       type:'F' },
+  { id:'easy_mix',        label:'Easy to mix',               cn:'易于调配',       type:'F' },
+  { id:'celebrating',     label:'Celebrating',               cn:'庆祝/庆贺',      type:'E' },
+  { id:'thirst',          label:'Thirst-quenching',          cn:'解渴/清爽',      type:'F' },
+  { id:'premium',         label:'Premium',                   cn:'高端/精品',      type:'F' },
+  { id:'moment_special',  label:'Making moment special',     cn:'让此刻特别',     type:'E' },
+  { id:'affordable',      label:'Affordable',                cn:'实惠/亲民',      type:'F' },
+  { id:'intl_brand',      label:'Successful intl brand',     cn:'成功国际品牌',   type:'F' },
+  { id:'reducing_stress', label:'Reducing stress',           cn:'释放压力',       type:'E' },
 ];
 
-// Brand × Attribute exposure % data (from analysis)
 const BRAND_DATA = {
   qingdao:   { knowledgeable:22.5, adventurous:19.5, relaxing:9.6,  having_fun:8.8,  goes_food:7.0, stylish:3.1, category_leader:2.2, celebrating:1.5, thirst:1.0, premium:0.8, moment_special:1.2, affordable:1.0, easy_mix:0.5, intl_brand:0.3, reducing_stress:0.5 },
   carlsberg: { knowledgeable:53.8, easy_mix:10.8,    thirst:8.0,    category_leader:3.6, affordable:2.7, having_fun:4.5, relaxing:2.5, stylish:2.0, adventurous:1.5, goes_food:2.0, celebrating:1.2, premium:1.0, moment_special:0.8, intl_brand:1.5, reducing_stress:0.5 },
@@ -291,269 +295,232 @@ const BRAND_DATA = {
   corona:    { having_fun:24.0,    moment_special:20.0, relaxing:12.0, celebrating:10.0, stylish:8.0, adventurous:7.0, knowledgeable:5.0, goes_food:4.0, thirst:3.0, reducing_stress:2.5, premium:2.0, easy_mix:1.0, category_leader:0.5, affordable:0.5, intl_brand:1.0 },
 };
 
-// ─── STATE ──────────────────────────────────────────────────────────────────
-let selectedBrands = new Set(['qingdao', 'heineken', 'budweiser']);
-let selectedAttrs = new Set(['knowledgeable','having_fun','relaxing','adventurous','goes_food','stylish','category_leader']);
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let selectedBrands = new Set(['qingdao','heineken','budweiser']);
+let selectedAttrs  = new Set(['knowledgeable','having_fun','relaxing','adventurous','goes_food','stylish','category_leader']);
 let currentTab = 'industry';
-
-// ─── INIT ────────────────────────────────────────────────────────────────────
-function init() {
-  renderBrandList();
-  renderAttrList();
-  renderAll();
-}
-
-function renderBrandList() {
-  const el = document.getElementById('brandList');
-  el.innerHTML = BRANDS.map(b => `
-    <div class="brand-chip ${selectedBrands.has(b.id) ? 'selected' : ''}" onclick="toggleBrand('${b.id}')">
-      <div class="brand-dot" style="background:${b.color}"></div>
-      <span class="brand-name">${b.name}</span>
-      <span class="brand-count">${b.notes}条</span>
-      <span class="brand-check">✓</span>
-    </div>
-  `).join('');
-}
-
-function renderAttrList(filter = '') {
-  const el = document.getElementById('attrList');
-  const filtered = filter ? ATTRS_DEF.filter(a =>
-    a.label.toLowerCase().includes(filter.toLowerCase()) || a.cn.includes(filter)
-  ) : ATTRS_DEF;
-  el.innerHTML = filtered.map(a => `
-    <div class="attr-item ${selectedAttrs.has(a.id) ? 'selected' : ''}" onclick="toggleAttr('${a.id}')">
-      <div class="attr-checkbox">${selectedAttrs.has(a.id) ? '✓' : ''}</div>
-      <span class="attr-label">${a.cn}</span>
-      <span class="attr-type ${a.type}">${a.type}</span>
-    </div>
-  `).join('');
-}
-
-function filterAttrs() {
-  renderAttrList(document.getElementById('attrSearch').value);
-}
-
-function toggleBrand(id) {
-  if (selectedBrands.has(id)) { selectedBrands.delete(id); } else { selectedBrands.add(id); }
-  renderBrandList();
-  renderAll();
-}
-
-function toggleAttr(id) {
-  if (selectedAttrs.has(id)) { selectedAttrs.delete(id); } else { selectedAttrs.add(id); }
-  renderAttrList(document.getElementById('attrSearch').value);
-  renderAll();
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['industry','brand','compare'][i] === tab);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p => {
-    p.classList.toggle('active', p.id === 'panel-' + tab);
-  });
-  renderAll();
-}
-
-function renderAll() {
-  if (currentTab === 'industry') renderIndustry();
-  if (currentTab === 'brand') renderBrand();
-  if (currentTab === 'compare') renderCompare();
-}
+let attrPanelOpen = false;
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-function getSelectedBrands() {
-  return BRANDS.filter(b => selectedBrands.has(b.id));
-}
-function getSelectedAttrs() {
-  return ATTRS_DEF.filter(a => selectedAttrs.has(a.id));
-}
-function getAttrById(id) { return ATTRS_DEF.find(a => a.id === id); }
-
-// Compute industry average weighted by exposure
+const getSelBrands = () => BRANDS.filter(b => selectedBrands.has(b.id));
+const getSelAttrs  = () => ATTRS_DEF.filter(a => selectedAttrs.has(a.id));
 function industryAvg(attrId) {
-  let totalExp = 0, weightedSum = 0;
-  BRANDS.forEach(b => {
-    const e = b.exposure;
-    totalExp += e;
-    weightedSum += (BRAND_DATA[b.id][attrId] || 0) * e;
-  });
-  return totalExp > 0 ? weightedSum / totalExp : 0;
+  let te = 0, ws = 0;
+  BRANDS.forEach(b => { te += b.exposure; ws += (BRAND_DATA[b.id][attrId]||0)*b.exposure; });
+  return te > 0 ? ws/te : 0;
 }
-
-// TGI: brand pct / industry avg * 100
 function tgi(brandId, attrId) {
   const avg = industryAvg(attrId);
-  if (avg === 0) return 100;
-  return (BRAND_DATA[brandId][attrId] || 0) / avg * 100;
+  return avg === 0 ? 100 : (BRAND_DATA[brandId][attrId]||0)/avg*100;
 }
-
 function initChart(id) {
   const el = document.getElementById(id);
   if (!el) return null;
-  const existing = echarts.getInstanceByDom(el);
-  if (existing) existing.dispose();
-  return echarts.init(el, null, { renderer: 'canvas' });
+  const ex = echarts.getInstanceByDom(el);
+  if (ex) ex.dispose();
+  return echarts.init(el, null, { renderer:'canvas' });
 }
 
-const COLORS = { dark: '#0f172a', card: '#1e293b', border: '#1e3a5f', text: '#e2e8f0', muted: '#475569', accent: '#3b82f6' };
+// ─── RENDER CONTROLS ─────────────────────────────────────────────────────────
+function renderControls() {
+  // Mobile brand chips
+  const bc = document.getElementById('brandChips');
+  if (bc) bc.innerHTML = BRANDS.map(b => `
+    <div class="chip ${selectedBrands.has(b.id)?'selected':''}" onclick="toggleBrand('${b.id}')">
+      <div class="chip-dot" style="background:${b.color}"></div>
+      <span>${b.name}</span>
+      ${selectedBrands.has(b.id)?'<span class="chip-check">✓</span>':''}
+    </div>`).join('');
 
-// ─── TAB 1: INDUSTRY ────────────────────────────────────────────────────────
+  // Mobile attr tags
+  const mq = document.getElementById('mAttrSearch');
+  const filter = mq ? mq.value : '';
+  renderAttrTags(filter);
+
+  // Desktop sidebar brand
+  const dbl = document.getElementById('dsBrandList');
+  if (dbl) dbl.innerHTML = BRANDS.map(b => `
+    <div class="ds-brand-chip ${selectedBrands.has(b.id)?'selected':''}" onclick="toggleBrand('${b.id}')">
+      <div class="ds-brand-dot" style="background:${b.color}"></div>
+      <span class="ds-brand-name">${b.name}</span>
+      <span class="ds-brand-count">${b.notes}条</span>
+      <span class="ds-brand-check">✓</span>
+    </div>`).join('');
+
+  // Desktop attr list
+  const dsq = document.getElementById('dsAttrSearch');
+  const dsFilter = dsq ? dsq.value : '';
+  renderDsAttrs(dsFilter);
+}
+
+function renderAttrTags(filter='') {
+  const list = filter ? ATTRS_DEF.filter(a => a.cn.includes(filter)||a.label.toLowerCase().includes(filter.toLowerCase())) : ATTRS_DEF;
+  const el = document.getElementById('mAttrList');
+  if (!el) return;
+  el.innerHTML = list.map(a => `
+    <div class="attr-tag ${selectedAttrs.has(a.id)?'selected':''}" onclick="toggleAttr('${a.id}')">
+      <span>${a.cn}</span>
+      <span class="attr-type-badge ${a.type}">${a.type}</span>
+    </div>`).join('');
+}
+
+function renderDsAttrs(filter='') {
+  const list = filter ? ATTRS_DEF.filter(a => a.cn.includes(filter)||a.label.toLowerCase().includes(filter.toLowerCase())) : ATTRS_DEF;
+  const el = document.getElementById('dsAttrList');
+  if (!el) return;
+  el.innerHTML = list.map(a => `
+    <div class="ds-attr-item ${selectedAttrs.has(a.id)?'selected':''}" onclick="toggleAttr('${a.id}')">
+      <div class="ds-attr-cb">${selectedAttrs.has(a.id)?'✓':''}</div>
+      <span class="ds-attr-label">${a.cn}</span>
+      <span class="attr-type-badge ${a.type}">${a.type}</span>
+    </div>`).join('');
+}
+
+function filterAttrs(src) {
+  if (src==='m') renderAttrTags(document.getElementById('mAttrSearch').value);
+  else renderDsAttrs(document.getElementById('dsAttrSearch').value);
+}
+
+function toggleBrand(id) {
+  selectedBrands.has(id) ? selectedBrands.delete(id) : selectedBrands.add(id);
+  renderControls(); renderAll();
+}
+function toggleAttr(id) {
+  selectedAttrs.has(id) ? selectedAttrs.delete(id) : selectedAttrs.add(id);
+  renderControls(); renderAll();
+}
+function toggleAttrs() {
+  attrPanelOpen = !attrPanelOpen;
+  document.getElementById('attrPanel').classList.toggle('open', attrPanelOpen);
+  document.getElementById('toggleAttrsBtn').classList.toggle('open', attrPanelOpen);
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',['industry','brand','compare'][i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id==='panel-'+tab));
+  renderAll();
+}
+
+// ─── TAB 1: INDUSTRY ─────────────────────────────────────────────────────────
 function renderIndustry() {
-  // Metrics
-  const totalNotes = BRANDS.reduce((s, b) => s + b.notes, 0);
-  const totalExp = BRANDS.reduce((s, b) => s + b.exposure, 0);
-  const topAttr = ATTRS_DEF.reduce((best, a) => {
-    const v = industryAvg(a.id);
-    return v > (industryAvg(best.id) || 0) ? a : best;
-  }, ATTRS_DEF[0]);
+  const totalNotes = BRANDS.reduce((s,b)=>s+b.notes,0);
+  const totalExp   = BRANDS.reduce((s,b)=>s+b.exposure,0);
+  const topAttr = ATTRS_DEF.reduce((best,a) => industryAvg(a.id) > industryAvg(best.id) ? a : best, ATTRS_DEF[0]);
 
   document.getElementById('industryMetrics').innerHTML = [
-    { val: totalNotes.toLocaleString(), label: '有效笔记总数', delta: '1451条', cls: 'neutral' },
-    { val: totalExp.toFixed(0) + 'M', label: '累计曝光量', delta: '484M 总曝光', cls: 'neutral' },
-    { val: BRANDS.length + '个', label: '分析品牌', delta: '全量覆盖', cls: 'neutral' },
-    { val: topAttr.cn, label: '行业Top Attribute', delta: `${industryAvg(topAttr.id).toFixed(1)}% 曝光占比`, cls: 'up' },
-  ].map(m => `
-    <div class="metric-card">
-      <div class="metric-val">${m.val}</div>
-      <div class="metric-label">${m.label}</div>
-      <div class="metric-delta ${m.cls}">▸ ${m.delta}</div>
-    </div>
-  `).join('');
+    { val:totalNotes.toLocaleString(), label:'有效笔记总数',    delta:'全量覆盖',     cls:'' },
+    { val:totalExp.toFixed(0)+'M',     label:'累计曝光量',      delta:'484M总曝光',   cls:'' },
+    { val:BRANDS.length+'个',          label:'分析品牌',        delta:'主流品牌',     cls:'' },
+    { val:topAttr.cn,                  label:'行业Top Attribute',delta:industryAvg(topAttr.id).toFixed(1)+'%占比', cls:'up' },
+  ].map(m=>`<div class="metric-card"><div class="metric-val">${m.val}</div><div class="metric-label">${m.label}</div><div class="metric-delta ${m.cls}">▸ ${m.delta}</div></div>`).join('');
 
-  // Bar chart
-  const sortedAttrs = [...ATTRS_DEF].sort((a, b) => industryAvg(b.id) - industryAvg(a.id)).slice(0, 12);
-  const chart1 = initChart('chart-industry-bar');
-  if (chart1) chart1.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0', fontSize: 12 } },
-    grid: { left: 120, right: 20, top: 10, bottom: 30 },
-    xAxis: { type: 'value', axisLabel: { color: '#475569', formatter: v => v.toFixed(1) + '%' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { show: false } },
-    yAxis: { type: 'category', data: sortedAttrs.map(a => a.cn), axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { show: false } },
-    series: [{
-      type: 'bar', data: sortedAttrs.map(a => ({
-        value: industryAvg(a.id).toFixed(2),
-        itemStyle: { color: a.type === 'E' ? '#7c3aed' : '#0369a1', borderRadius: [0, 4, 4, 0] }
-      })),
-      barMaxWidth: 18, label: { show: true, position: 'right', color: '#64748b', fontSize: 10, formatter: p => p.value + '%' }
+  // Bar
+  const sorted = [...ATTRS_DEF].sort((a,b)=>industryAvg(b.id)-industryAvg(a.id)).slice(0,12);
+  const c1 = initChart('chart-industry-bar');
+  if (c1) c1.setOption({
+    backgroundColor:'transparent',
+    tooltip:{ trigger:'axis', backgroundColor:'#1e293b', borderColor:'#334155', textStyle:{color:'#e2e8f0',fontSize:11} },
+    grid:{ left:80, right:50, top:8, bottom:24 },
+    xAxis:{ type:'value', axisLabel:{color:'#475569',fontSize:10,formatter:v=>v+'%'}, splitLine:{lineStyle:{color:'#1e3a5f'}}, axisLine:{show:false} },
+    yAxis:{ type:'category', data:sorted.map(a=>a.cn), axisLabel:{color:'#94a3b8',fontSize:10}, axisTick:{show:false}, axisLine:{show:false} },
+    series:[{ type:'bar', barMaxWidth:14,
+      data:sorted.map(a=>({ value:+industryAvg(a.id).toFixed(2), itemStyle:{color:a.type==='E'?'#7c3aed':'#0369a1',borderRadius:[0,4,4,0]} })),
+      label:{show:true,position:'right',color:'#64748b',fontSize:9,formatter:p=>p.value+'%'}
     }]
   });
 
-  // Donut E vs F
-  const eTotal = ATTRS_DEF.filter(a => a.type === 'E').reduce((s, a) => s + industryAvg(a.id), 0);
-  const fTotal = ATTRS_DEF.filter(a => a.type === 'F').reduce((s, a) => s + industryAvg(a.id), 0);
-  const chart2 = initChart('chart-industry-ef');
-  if (chart2) chart2.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
-    legend: { bottom: 10, textStyle: { color: '#94a3b8', fontSize: 11 } },
-    series: [{
-      type: 'pie', radius: ['45%', '70%'], center: ['50%', '45%'],
-      data: [
-        { value: eTotal.toFixed(1), name: 'Emotional 情感型', itemStyle: { color: '#7c3aed' } },
-        { value: fTotal.toFixed(1), name: 'Functional 功能型', itemStyle: { color: '#0369a1' } },
+  // Donut
+  const eT = ATTRS_DEF.filter(a=>a.type==='E').reduce((s,a)=>s+industryAvg(a.id),0);
+  const fT = ATTRS_DEF.filter(a=>a.type==='F').reduce((s,a)=>s+industryAvg(a.id),0);
+  const c2 = initChart('chart-industry-ef');
+  if (c2) c2.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0'}},
+    legend:{bottom:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[{ type:'pie', radius:['42%','68%'], center:['50%','44%'],
+      data:[
+        {value:+eT.toFixed(1), name:'Emotional 情感型', itemStyle:{color:'#7c3aed'}},
+        {value:+fT.toFixed(1), name:'Functional 功能型', itemStyle:{color:'#0369a1'}},
       ],
-      label: { color: '#94a3b8', fontSize: 11 },
-      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } }
+      label:{color:'#94a3b8',fontSize:10},
     }]
   });
 
   // Heatmap
-  const heatAttrs = ATTRS_DEF.slice(0, 10);
-  const heatBrands = BRANDS;
-  const heatData = [];
-  heatBrands.forEach((b, bi) => {
-    heatAttrs.forEach((a, ai) => {
-      heatData.push([bi, ai, parseFloat((BRAND_DATA[b.id][a.id] || 0).toFixed(1))]);
-    });
-  });
-  const chart3 = initChart('chart-industry-heatmap');
-  if (chart3) chart3.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0', fontSize: 12 },
-      formatter: p => `${heatBrands[p.data[0]].name} · ${heatAttrs[p.data[1]].cn}<br/><b>${p.data[2]}%</b>` },
-    grid: { left: 70, right: 30, top: 30, bottom: 80 },
-    xAxis: { type: 'category', data: heatBrands.map(b => b.name), axisLabel: { color: '#94a3b8', fontSize: 12 }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
-    yAxis: { type: 'category', data: heatAttrs.map(a => a.cn), axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { show: false } },
-    visualMap: { min: 0, max: 55, calculable: true, orient: 'horizontal', left: 'center', bottom: 10,
-      inRange: { color: ['#0f172a', '#1e3a5f', '#1d4ed8', '#3b82f6', '#60a5fa'] },
-      textStyle: { color: '#64748b', fontSize: 10 } },
-    series: [{ type: 'heatmap', data: heatData, label: { show: true, color: '#e2e8f0', fontSize: 9, formatter: p => p.data[2] > 0 ? p.data[2] + '%' : '' },
-      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } } }]
+  const hA = ATTRS_DEF.slice(0,10), hB = BRANDS;
+  const hData = [];
+  hB.forEach((b,bi)=>hA.forEach((a,ai)=>hData.push([bi,ai,+((BRAND_DATA[b.id][a.id]||0).toFixed(1))])));
+  const c3 = initChart('chart-industry-heatmap');
+  if (c3) c3.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0',fontSize:11},
+      formatter:p=>`${hB[p.data[0]].name} · ${hA[p.data[1]].cn}<br/><b>${p.data[2]}%</b>`},
+    grid:{left:72,right:16,top:16,bottom:80},
+    xAxis:{type:'category',data:hB.map(b=>b.name),axisLabel:{color:'#94a3b8',fontSize:11},axisTick:{show:false},axisLine:{lineStyle:{color:'#1e3a5f'}}},
+    yAxis:{type:'category',data:hA.map(a=>a.cn),axisLabel:{color:'#94a3b8',fontSize:10},axisTick:{show:false},axisLine:{show:false}},
+    visualMap:{min:0,max:55,calculable:true,orient:'horizontal',left:'center',bottom:4,
+      inRange:{color:['#0f172a','#1e3a5f','#1d4ed8','#3b82f6','#60a5fa']},
+      textStyle:{color:'#64748b',fontSize:9}},
+    series:[{type:'heatmap',data:hData,
+      label:{show:true,color:'#e2e8f0',fontSize:9,formatter:p=>p.data[2]>0?p.data[2]+'%':''},
+    }]
   });
 }
 
 // ─── TAB 2: BRAND ────────────────────────────────────────────────────────────
 function renderBrand() {
-  const brands = getSelectedBrands().slice(0, 4);
-  const attrs = getSelectedAttrs().slice(0, 8);
-  if (brands.length === 0 || attrs.length === 0) return;
+  const brands = getSelBrands().slice(0,4);
+  const attrs  = getSelAttrs().slice(0,8);
+  if (!brands.length||!attrs.length) return;
 
-  // Radar
-  const chart4 = initChart('chart-brand-radar');
-  if (chart4) chart4.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
-    legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 11 }, data: brands.map(b => b.name) },
-    radar: {
-      indicator: attrs.map(a => ({ name: a.cn, max: 60 })),
-      center: ['50%', '47%'], radius: '65%',
-      splitNumber: 4,
-      axisName: { color: '#94a3b8', fontSize: 11 },
-      splitLine: { lineStyle: { color: '#1e3a5f' } },
-      splitArea: { areaStyle: { color: ['#0f172a22', '#1e293b22'] } },
-      axisLine: { lineStyle: { color: '#1e3a5f' } },
+  const c4 = initChart('chart-brand-radar');
+  if (c4) c4.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0'}},
+    legend:{bottom:0,textStyle:{color:'#94a3b8',fontSize:10},data:brands.map(b=>b.name)},
+    radar:{
+      indicator:attrs.map(a=>({name:a.cn,max:60})),
+      center:['50%','46%'],radius:'60%',splitNumber:4,
+      axisName:{color:'#94a3b8',fontSize:10},
+      splitLine:{lineStyle:{color:'#1e3a5f'}},
+      splitArea:{areaStyle:{color:['#0f172a22','#1e293b22']}},
+      axisLine:{lineStyle:{color:'#1e3a5f'}},
     },
-    series: [{
-      type: 'radar',
-      data: brands.map(b => ({
-        name: b.name,
-        value: attrs.map(a => BRAND_DATA[b.id][a.id] || 0),
-        lineStyle: { color: b.color, width: 2 },
-        areaStyle: { color: b.color + '22' },
-        symbol: 'circle', symbolSize: 4,
-        itemStyle: { color: b.color }
-      }))
-    }]
+    series:[{type:'radar',data:brands.map(b=>({
+      name:b.name, value:attrs.map(a=>BRAND_DATA[b.id][a.id]||0),
+      lineStyle:{color:b.color,width:2}, areaStyle:{color:b.color+'22'},
+      symbol:'circle',symbolSize:4, itemStyle:{color:b.color}
+    }))}]
   });
 
-  // TGI bar
-  const chart5 = initChart('chart-brand-tgi');
-  if (brands.length === 1) {
+  const c5 = initChart('chart-brand-tgi');
+  if (!c5) return;
+  if (brands.length===1) {
     const b = brands[0];
-    const tgiData = attrs.map(a => ({ attr: a, val: tgi(b.id, a.id) })).sort((x, y) => y.val - x.val);
-    chart5.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' },
-        formatter: p => `${p[0].name}<br/>TGI: <b>${p[0].value.toFixed(0)}</b>` },
-      grid: { left: 110, right: 60, top: 10, bottom: 30 },
-      xAxis: { type: 'value', min: 0, max: 250, axisLabel: { color: '#475569' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { show: false } },
-      yAxis: { type: 'category', data: tgiData.map(d => d.attr.cn), axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { show: false } },
-      series: [
-        { type: 'bar', data: tgiData.map(d => ({
-            value: d.val.toFixed(0),
-            itemStyle: { color: d.val >= 120 ? '#22c55e' : d.val <= 80 ? '#ef4444' : '#3b82f6', borderRadius: [0, 4, 4, 0] }
-          })),
-          barMaxWidth: 18,
-          markLine: { data: [{ xAxis: 100 }], lineStyle: { color: '#ef4444', type: 'dashed' }, label: { formatter: '行业均值=100', color: '#ef4444', fontSize: 10 }, symbol: 'none' },
-          label: { show: true, position: 'right', color: '#64748b', fontSize: 10, formatter: p => p.value }
-        }
-      ]
+    const td = [...attrs].map(a=>({attr:a,val:tgi(b.id,a.id)})).sort((x,y)=>y.val-x.val);
+    c5.setOption({
+      backgroundColor:'transparent',
+      tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0'},formatter:p=>`${p[0].name}<br/>TGI: <b>${(+p[0].value).toFixed(0)}</b>`},
+      grid:{left:80,right:50,top:8,bottom:24},
+      xAxis:{type:'value',min:0,max:250,axisLabel:{color:'#475569',fontSize:10},splitLine:{lineStyle:{color:'#1e3a5f'}},axisLine:{show:false}},
+      yAxis:{type:'category',data:td.map(d=>d.attr.cn),axisLabel:{color:'#94a3b8',fontSize:10},axisTick:{show:false},axisLine:{show:false}},
+      series:[{type:'bar',barMaxWidth:14,
+        data:td.map(d=>({value:+d.val.toFixed(0),itemStyle:{color:d.val>=120?'#22c55e':d.val<=80?'#ef4444':'#3b82f6',borderRadius:[0,4,4,0]}})),
+        markLine:{data:[{xAxis:100}],lineStyle:{color:'#ef444466',type:'dashed'},label:{formatter:'均值=100',color:'#ef4444',fontSize:9},symbol:'none'},
+        label:{show:true,position:'right',color:'#64748b',fontSize:9,formatter:p=>p.value}
+      }]
     });
   } else {
-    // Multi brand grouped
-    chart5.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
-      legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 11 }, data: brands.map(b => b.name) },
-      grid: { left: 110, right: 20, top: 10, bottom: 50 },
-      xAxis: { type: 'value', axisLabel: { color: '#475569' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { show: false } },
-      yAxis: { type: 'category', data: attrs.map(a => a.cn), axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { show: false } },
-      series: brands.map(b => ({
-        type: 'bar', name: b.name, barMaxWidth: 10,
-        data: attrs.map(a => tgi(b.id, a.id).toFixed(0)),
-        itemStyle: { color: b.color, borderRadius: [0, 3, 3, 0] }
+    c5.setOption({
+      backgroundColor:'transparent',
+      tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0'}},
+      legend:{bottom:0,textStyle:{color:'#94a3b8',fontSize:10},data:brands.map(b=>b.name)},
+      grid:{left:80,right:16,top:8,bottom:40},
+      xAxis:{type:'value',axisLabel:{color:'#475569',fontSize:10},splitLine:{lineStyle:{color:'#1e3a5f'}},axisLine:{show:false}},
+      yAxis:{type:'category',data:attrs.map(a=>a.cn),axisLabel:{color:'#94a3b8',fontSize:10},axisTick:{show:false},axisLine:{show:false}},
+      series:brands.map(b=>({type:'bar',name:b.name,barMaxWidth:10,
+        data:attrs.map(a=>+tgi(b.id,a.id).toFixed(0)),
+        itemStyle:{color:b.color,borderRadius:[0,3,3,0]}
       }))
     });
   }
@@ -561,116 +528,97 @@ function renderBrand() {
 
 // ─── TAB 3: COMPARE ──────────────────────────────────────────────────────────
 function renderCompare() {
-  const brands = getSelectedBrands();
-  const attrs = getSelectedAttrs();
-  if (brands.length === 0 || attrs.length === 0) {
-    document.getElementById('chart-compare-bar').innerHTML = '<div class="empty">请在左侧选择品牌和 Attributes</div>';
-    return;
-  }
+  const brands = getSelBrands();
+  const attrs  = getSelAttrs();
+  if (!brands.length||!attrs.length) return;
 
-  // Grouped bar
-  const chart6 = initChart('chart-compare-bar');
-  if (chart6) chart6.setOption({
-    backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' },
-      formatter: params => params[0].name + '<br/>' + params.map(p => `<span style="color:${p.color}">●</span> ${p.seriesName}: ${p.value}%`).join('<br/>') },
-    legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 11 }, data: brands.map(b => b.name) },
-    grid: { left: 110, right: 20, top: 10, bottom: 50 },
-    xAxis: { type: 'value', axisLabel: { color: '#475569', formatter: v => v + '%' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { show: false } },
-    yAxis: { type: 'category', data: attrs.map(a => a.cn), axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { show: false } },
-    series: brands.map(b => ({
-      type: 'bar', name: b.name, barMaxWidth: 14,
-      data: attrs.map(a => parseFloat((BRAND_DATA[b.id][a.id] || 0).toFixed(1))),
-      itemStyle: { color: b.color, borderRadius: [0, 3, 3, 0] }
+  const c6 = initChart('chart-compare-bar');
+  if (c6) c6.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0',fontSize:11},
+      formatter:ps=>ps[0].name+'<br/>'+ps.map(p=>`<span style="color:${p.color}">●</span> ${p.seriesName}: ${p.value}%`).join('<br/>')},
+    legend:{bottom:0,textStyle:{color:'#94a3b8',fontSize:10},data:brands.map(b=>b.name)},
+    grid:{left:80,right:16,top:8,bottom:40},
+    xAxis:{type:'value',axisLabel:{color:'#475569',fontSize:10,formatter:v=>v+'%'},splitLine:{lineStyle:{color:'#1e3a5f'}},axisLine:{show:false}},
+    yAxis:{type:'category',data:attrs.map(a=>a.cn),axisLabel:{color:'#94a3b8',fontSize:10},axisTick:{show:false},axisLine:{show:false}},
+    series:brands.map(b=>({type:'bar',name:b.name,barMaxWidth:12,
+      data:attrs.map(a=>+((BRAND_DATA[b.id][a.id]||0).toFixed(1))),
+      itemStyle:{color:b.color,borderRadius:[0,3,3,0]}
     }))
   });
 
-  // Scatter: Functional vs Emotional positioning
-  const chart7 = initChart('chart-compare-scatter');
-  if (chart7) {
-    const scatterData = brands.map(b => {
-      const eAttrs = ATTRS_DEF.filter(a => a.type === 'E');
-      const fAttrs = ATTRS_DEF.filter(a => a.type === 'F');
-      const eVal = eAttrs.reduce((s, a) => s + (BRAND_DATA[b.id][a.id] || 0), 0);
-      const fVal = fAttrs.reduce((s, a) => s + (BRAND_DATA[b.id][a.id] || 0), 0);
-      return { brand: b, eVal, fVal };
+  const c7 = initChart('chart-compare-scatter');
+  if (c7) {
+    const sData = brands.map(b=>{
+      const eV = ATTRS_DEF.filter(a=>a.type==='E').reduce((s,a)=>s+(BRAND_DATA[b.id][a.id]||0),0);
+      const fV = ATTRS_DEF.filter(a=>a.type==='F').reduce((s,a)=>s+(BRAND_DATA[b.id][a.id]||0),0);
+      return {brand:b,eV,fV};
     });
-    chart7.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { trigger: 'item', backgroundColor: '#1e293b', borderColor: '#334155', textStyle: { color: '#e2e8f0' },
-        formatter: p => `${p.data[3]}<br/>Functional: ${p.data[0].toFixed(1)}%<br/>Emotional: ${p.data[1].toFixed(1)}%<br/>曝光: ${p.data[2]}M` },
-      grid: { left: 50, right: 20, top: 20, bottom: 50 },
-      xAxis: { type: 'value', name: 'Functional 属性强度(%)', nameLocation: 'end', nameTextStyle: { color: '#475569', fontSize: 10 }, axisLabel: { color: '#475569' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
-      yAxis: { type: 'value', name: 'Emotional 属性强度(%)', nameLocation: 'end', nameTextStyle: { color: '#475569', fontSize: 10 }, axisLabel: { color: '#475569' }, splitLine: { lineStyle: { color: '#1e3a5f' } }, axisLine: { lineStyle: { color: '#1e3a5f' } } },
-      series: scatterData.map(d => ({
-        type: 'scatter', name: d.brand.name,
-        data: [[d.fVal, d.eVal, d.brand.exposure, d.brand.name]],
-        symbolSize: v => Math.max(16, Math.sqrt(v[2]) * 4),
-        itemStyle: { color: d.brand.color, opacity: 0.85 },
-        label: { show: true, formatter: p => p.data[3], position: 'top', color: d.brand.color, fontSize: 11 }
+    c7.setOption({
+      backgroundColor:'transparent',
+      tooltip:{trigger:'item',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0'},
+        formatter:p=>`${p.data[3]}<br/>Functional: ${p.data[0].toFixed(1)}%<br/>Emotional: ${p.data[1].toFixed(1)}%<br/>曝光: ${p.data[2]}M`},
+      grid:{left:44,right:16,top:16,bottom:44},
+      xAxis:{type:'value',name:'Functional(%)',nameLocation:'end',nameTextStyle:{color:'#475569',fontSize:9},axisLabel:{color:'#475569',fontSize:9},splitLine:{lineStyle:{color:'#1e3a5f'}},axisLine:{lineStyle:{color:'#1e3a5f'}}},
+      yAxis:{type:'value',name:'Emotional(%)',nameLocation:'end',nameTextStyle:{color:'#475569',fontSize:9},axisLabel:{color:'#475569',fontSize:9},splitLine:{lineStyle:{color:'#1e3a5f'}},axisLine:{lineStyle:{color:'#1e3a5f'}}},
+      series:sData.map(d=>({type:'scatter',name:d.brand.name,
+        data:[[d.fV,d.eV,d.brand.exposure,d.brand.name]],
+        symbolSize:v=>Math.max(14,Math.sqrt(v[2])*4),
+        itemStyle:{color:d.brand.color,opacity:0.85},
+        label:{show:true,formatter:p=>p.data[3],position:'top',color:d.brand.color,fontSize:10}
       }))
     });
   }
 
-  // Compare table
-  const tableHtml = `
+  // Table
+  document.getElementById('compare-table-wrap').innerHTML = `
     <table class="summary-table">
       <thead><tr>
-        <th>Attribute</th>
-        <th>类型</th>
-        ${brands.map(b => `<th style="color:${b.color}">${b.name}</th>`).join('')}
+        <th>Attribute</th><th>类型</th>
+        ${brands.map(b=>`<th style="color:${b.color}">${b.name}</th>`).join('')}
         <th>行业均值</th>
       </tr></thead>
       <tbody>
-        ${attrs.map(a => {
+        ${attrs.map(a=>{
           const avg = industryAvg(a.id);
           return `<tr>
             <td style="color:#e2e8f0;font-weight:500">${a.cn}</td>
-            <td><span class="attr-type ${a.type}" style="font-size:10px;padding:1px 5px;border-radius:3px">${a.type}</span></td>
-            ${brands.map(b => {
-              const val = BRAND_DATA[b.id][a.id] || 0;
-              const pct = val.toFixed(1);
-              const tgiVal = tgi(b.id, a.id).toFixed(0);
-              const color = tgiVal >= 120 ? '#22c55e' : tgiVal <= 80 ? '#ef4444' : '#60a5fa';
-              return `<td>
-                <span style="color:${b.color};font-weight:600">${pct}%</span>
-                <span style="color:${color};font-size:10px;margin-left:4px">TGI:${tgiVal}</span>
-              </td>`;
+            <td><span class="attr-type-badge ${a.type}">${a.type}</span></td>
+            ${brands.map(b=>{
+              const val = (BRAND_DATA[b.id][a.id]||0).toFixed(1);
+              const t = tgi(b.id,a.id).toFixed(0);
+              const c = t>=120?'#22c55e':t<=80?'#ef4444':'#60a5fa';
+              return `<td><span style="color:${b.color};font-weight:600">${val}%</span> <span style="color:${c};font-size:9px">T${t}</span></td>`;
             }).join('')}
             <td style="color:#64748b">${avg.toFixed(1)}%</td>
           </tr>`;
         }).join('')}
       </tbody>
-    </table>
-  `;
-  document.getElementById('compare-table-wrap').innerHTML = tableHtml;
+    </table>`;
 
-  // Insight
-  if (brands.length >= 2 && attrs.length >= 2) {
-    const topBrand = brands.reduce((best, b) => {
-      const score = attrs.reduce((s, a) => s + (BRAND_DATA[b.id][a.id] || 0), 0);
-      const bestScore = attrs.reduce((s, a) => s + (BRAND_DATA[best.id][a.id] || 0), 0);
-      return score > bestScore ? b : best;
-    }, brands[0]);
-    const topAttr = attrs.reduce((best, a) => {
-      const v = BRAND_DATA[brands[0].id][a.id] || 0;
-      const bv = BRAND_DATA[brands[0].id][best.id] || 0;
-      return v > bv ? a : best;
-    }, attrs[0]);
+  if (brands.length>=2) {
+    const top = brands.reduce((best,b)=>{
+      const s = attrs.reduce((x,a)=>x+(BRAND_DATA[b.id][a.id]||0),0);
+      const bs = attrs.reduce((x,a)=>x+(BRAND_DATA[best.id][a.id]||0),0);
+      return s>bs?b:best;
+    },brands[0]);
     document.getElementById('compare-insight').innerHTML =
-      `<strong>快速结论：</strong>在所选 Attributes 维度上，<strong style="color:${topBrand.color}">${topBrand.name}</strong> 整体占比最高，是该赛道内容声量最强的品牌。${brands[0].name} 在 <strong>${topAttr.cn}</strong> 上最突出（${(BRAND_DATA[brands[0].id][topAttr.id] || 0).toFixed(1)}%）。TGI &gt; 120 的绿色数字代表该品牌的差异化优势 attribute。`;
+      `<strong>快速结论：</strong>在所选维度上，<strong style="color:${top.color}">${top.name}</strong> 整体声量最强。表中 <span style="color:#22c55e">绿色TGI</span> = 差异化优势，<span style="color:#ef4444">红色TGI</span> = 内容缺口。`;
   }
 }
 
-// ─── RESPONSIVE ──────────────────────────────────────────────────────────────
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => {
-  ['chart-industry-bar','chart-industry-ef','chart-industry-heatmap','chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'].forEach(id => {
+  ['chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
+   'chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'].forEach(id=>{
     const el = document.getElementById(id);
-    if (el) { const inst = echarts.getInstanceByDom(el); if (inst) inst.resize(); }
+    if (el) { const i = echarts.getInstanceByDom(el); if(i) i.resize(); }
   });
 });
 
-init();
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderControls();
+renderIndustry();
 </script>
 </body>
 </html>
