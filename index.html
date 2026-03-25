@@ -398,7 +398,16 @@ function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',['industry','brand','compare'][i]===tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id==='panel-'+tab));
-  renderAll();
+  // 等 DOM 渲染完再初始化图表（panel 从 display:none 变为 visible 后尺寸才正确）
+  requestAnimationFrame(() => {
+    renderAll();
+    setTimeout(() => {
+      ALL_CHARTS.forEach(id=>{
+        const el = document.getElementById(id);
+        if (el) { const i = echarts.getInstanceByDom(el); if(i) i.resize(); }
+      });
+    }, 50);
+  });
 }
 
 // ─── TAB 1: INDUSTRY ─────────────────────────────────────────────────────────
@@ -607,10 +616,18 @@ function renderCompare() {
   }
 }
 
+// ─── RENDER ALL ──────────────────────────────────────────────────────────────
+function renderAll() {
+  if (currentTab === 'industry') renderIndustry();
+  if (currentTab === 'brand')    renderBrand();
+  if (currentTab === 'compare')  renderCompare();
+}
+
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
+const ALL_CHARTS = ['chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
+   'chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'];
 window.addEventListener('resize', () => {
-  ['chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
-   'chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'].forEach(id=>{
+  ALL_CHARTS.forEach(id=>{
     const el = document.getElementById(id);
     if (el) { const i = echarts.getInstanceByDom(el); if(i) i.resize(); }
   });
