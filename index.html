@@ -502,25 +502,7 @@ function renderTrend(){
     })
   });
 
-  const c2 = initChart('chart-trend-delta');
-  const dList = BRANDS.map(b=>{
-    const v=(TREND[b.id]||{})[attrId]||[];
-    const r=v.slice(8).reduce((s,x)=>s+x,0)/4, p=v.slice(4,8).reduce((s,x)=>s+x,0)/4;
-    return {b,d:+(r-p).toFixed(2)};
-  }).sort((a,b)=>b.d-a.d);
-  c2.setOption({
-    backgroundColor:'transparent',
-    tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0',fontSize:11},
-      formatter:p=>`${p[0].name}: ${p[0].value>=0?'+':''}${p[0].value.toFixed(2)}%`
-    },
-    grid:{top:10,bottom:10,left:10,right:60,containLabel:true},
-    xAxis:{type:'value',axisLabel:{color:'#64748b',fontSize:10,formatter:v=>(v>0?'+':'')+v+'%'},splitLine:{lineStyle:{color:'#1e3a5f55'}}},
-    yAxis:{type:'category',data:dList.map(d=>d.b.name),axisLabel:{color:'#94a3b8',fontSize:11},axisTick:{show:false},axisLine:{show:false}},
-    series:[{type:'bar',barMaxWidth:16,
-      data:dList.map(d=>{const up=d.d>=0; return {value:d.d,itemStyle:{color:up?'#22c55e':'#ef4444',borderRadius:up?[0,4,4,0]:[4,0,0,4]}}}),
-      label:{show:true,position:'right',color:'#94a3b8',fontSize:10,formatter:p=>(p.value>=0?'+':'')+p.value.toFixed(1)+'%'}
-    }]
-  });
+
   renderAttrNotes(document.getElementById('trend-attr-sel').value);
 }
 
@@ -759,7 +741,7 @@ function renderAll() {
 }
 
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
-const ALL_CHARTS = ['chart-trend-line','chart-trend-delta','chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
+const ALL_CHARTS = ['chart-trend-line','chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
    'chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'];
 window.addEventListener('resize', () => {
   ALL_CHARTS.forEach(id=>{
