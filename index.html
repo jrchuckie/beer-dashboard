@@ -278,6 +278,11 @@
         <div class="card-sub">各品牌在所选 Attribute 上的环比变化幅度</div>
         <div class="chart-box tall" id="chart-trend-delta"></div>
       </div>
+      <div class="card">
+        <div class="card-title">相关归因笔记</div>
+        <div class="card-sub" id="trend-notes-sub">当前 Attribute 在小红书的代表性内容</div>
+        <div id="trend-notes" style="display:flex;flex-direction:column;gap:8px;margin-top:4px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -446,6 +451,26 @@ function initTrendBrandPills(){
     pill.onclick = ()=>{ trendBrands.has(b.id)?trendBrands.delete(b.id):trendBrands.add(b.id); initTrendBrandPills(); renderTrend(); };
     el.appendChild(pill);
   });
+}
+
+
+// ── Attribute Notes ──
+const ATTR_NOTES = {"having_fun": [{"note_id": "68909cf10000000002000cb6", "title": "苏超热浪不停歇⚽️彩旸啤酒音乐节🍻", "img_url": "http://ci.xiaohongshu.com/1040g00831kot8or432005pv3ugrmu09dc5eln20?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/68909cf10000000002000cb6", "like": 84}], "relaxing": [{"note_id": "67066f25000000002a0333a4", "title": "到家喝酒，一个人的解压时刻", "img_url": "http://ci.xiaohongshu.com/1040g008318nva07kju005nu3nnj08r0s9fmhb48?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/67066f25000000002a0333a4", "like": 11299}, {"note_id": "67d249db000000001b03c176", "title": "有没有啥方案能够代替啤酒的微醺感觉？", "img_url": "http://ci.xiaohongshu.com/1040g00831ev1nve0mi6g5n48tfv41fb6cakvh40?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/67d249db000000001b03c176", "like": 2324}], "adventurous": [{"note_id": "6902d42e0000000007003392", "title": "谁家飞拉达是\"高空溜索\"\"骑哈雷\"下山啊", "img_url": "http://ci.xiaohongshu.com/1040g00831o8edkir50605o50bgqg8mbh3a9l9h8?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/6902d42e0000000007003392", "like": 221919}, {"note_id": "6971f085000000001a01d47a", "title": "\"极限运动\"都有哪些？", "img_url": "http://ci.xiaohongshu.com/1040g2sg31rkuq4t2ias0494mofjn1dsafv93eko?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/6971f085000000001a01d47a", "like": 2693}], "goes_food": [{"note_id": "6691f93100000000250164d4", "title": "九款能喝趴下的下酒菜。超级绝巨过瘾。", "img_url": "http://ci.xiaohongshu.com/1040g2sg31567sl3mh4dg5pjlg9q1oh0lu86cq0g?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/6691f93100000000250164d4", "like": 8264}, {"note_id": "664df1af00000000160109f2", "title": "花蛤上竟有字", "img_url": "http://ci.xiaohongshu.com/1040g0083133pvsqq7e6g5p6o2ddg9latjt20d6g?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/664df1af00000000160109f2", "like": 9501}], "stylish": [{"note_id": "630e03e6000000001303b15f", "title": "设计项目｜花信精酿啤酒", "img_url": "http://ci.xiaohongshu.com/01028u01kkywqt3nz5h01183tlj0p6rr0s?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/630e03e6000000001303b15f", "like": 414}, {"note_id": "68e8f00f0000000005032761", "title": "曼谷的一些精酿", "img_url": "http://ci.xiaohongshu.com/1040g2sg31nf4fj0hl87g49mad8bnmtskhvr6dvo?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/68e8f00f0000000005032761", "like": 183}], "category_leader": [{"note_id": "6885f848000000002400b03c", "title": "2025世界十大啤酒品牌 看看有没有你喜欢的", "img_url": "http://ci.xiaohongshu.com/1040g00831keo890lj2pg5nh8ae0g8mmbmduqb9g?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/6885f848000000002400b03c", "like": 619}, {"note_id": "6800c266000000000f039156", "title": "世界十大啤酒品牌，最后一个国内都少见", "img_url": "http://ci.xiaohongshu.com/1040g2sg31gcdv5r13qe05pn3hfgmr982anvgjqg?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/6800c266000000000f039156", "like": 622}], "celebrating": [{"note_id": "692e9b9d000000000d03c234", "title": "啤酒蛋糕教程", "img_url": "http://ci.xiaohongshu.com/1040g00831pj6fvpekg005o94f5ig9dm73j6g840?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/692e9b9d000000000d03c234", "like": 2654}, {"note_id": "65a21427000000001e007f28", "title": "宿舍聚餐", "img_url": "http://ci.xiaohongshu.com/1040g00830trv6ghvkk005ohruv6gk62ptnoujo0?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/65a21427000000001e007f28", "like": 2103}], "premium": [{"note_id": "66a1c823000000000d00d540", "title": "喝遍日本便利店的100种酒｜三得利 神泡", "img_url": "http://ci.xiaohongshu.com/1040g2sg315lltjh2hc705oojbiskhkob44gcoc0?imageView2/2/w/400/format/jpg", "note_url": "https://www.xiaohongshu.com/discovery/item/66a1c823000000000d00d540", "like": 98}]};
+
+function renderAttrNotes(attrId) {
+  const el = document.getElementById('trend-notes');
+  const notes = ATTR_NOTES[attrId] || [];
+  if (!notes.length) { el.innerHTML = '<p style="color:#475569;font-size:12px">暂无相关笔记</p>'; return; }
+  el.innerHTML = notes.map(n => `
+    <a href="${n.note_url}" target="_blank" style="display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:8px;background:#0f172a;border:1px solid #1e3a5f;text-decoration:none;transition:border-color 0.15s" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#1e3a5f'">
+      <img src="${n.img_url}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;flex-shrink:0;background:#1e293b" loading="lazy"/>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:#e2e8f0;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title}</div>
+        <div style="font-size:11px;color:#475569">👍 ${n.like.toLocaleString()} · 小红书</div>
+      </div>
+      <div style="color:#3b82f6;font-size:14px;flex-shrink:0">↗</div>
+    </a>
+  `).join('');
 }
 
 function renderTrend(){
