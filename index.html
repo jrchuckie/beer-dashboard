@@ -480,7 +480,7 @@ function renderAttrNotes(attrId) {
 }
 
 function renderTrend(){
-  const attrId = document.getElementById('trend-attr-sel').value;
+  const attrId = document.getElementById('trend-attr-sel').value || 'having_fun';
   const nWeeks = parseInt(document.getElementById('trend-week-sel').value);
   const weeks = WEEKS.slice(12-nWeeks);
   const brands = BRANDS.filter(b=>trendBrands.has(b.id));
