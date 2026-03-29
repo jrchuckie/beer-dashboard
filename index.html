@@ -199,16 +199,16 @@
       <div class="metrics-row" id="industryMetrics"></div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">行业 Attributes 热度排行</div>
+          <div class="card-title">行业 Attributes重要性排序</div>
           <div class="card-sub">曝光加权占比 · 全品牌汇总</div>
           <div class="chart-box" id="chart-industry-bar"></div>
-          <div class="insight"><strong>核心发现：</strong>Knowledgeable（知识科普）以 <strong>26%+</strong> 居首，Having fun + Relaxing/chill 合计 <strong>23%</strong>，是啤酒赛道内容的三大主轴。</div>
+          <div class="insight"><strong>核心发现：</strong>Having fun + Relaxing/chill 合计 <strong>23%</strong>，与 Adventurous 共同构成啤酒赛道内容的三大情绪主轴。</div>
         </div>
         <div class="card">
           <div class="card-title">Emotional vs Functional 分布</div>
           <div class="card-sub">情感型 vs 功能型 attribute 结构</div>
           <div class="chart-box" id="chart-industry-ef"></div>
-          <div class="insight"><strong>结构洞察：</strong>Functional 属性主导（Knowledgeable/美食搭配/品类权威），用户更多以「决策参考」而非「情绪共鸣」为主要诉求。</div>
+          <div class="insight"><strong>结构洞察：</strong>Emotional 属性（Having fun / Relaxing / Adventurous）与 Functional 属性（美食搭配/品类权威）并重，品牌需在「功能说服」与「情绪共鸣」之间找到平衡。</div>
         </div>
       </div>
       <div class="card">
@@ -269,7 +269,6 @@ const BRANDS = [
 ];
 
 const ATTRS_DEF = [
-  { id:'knowledgeable',   label:'Knowledgeable',             cn:'知识/科普',     type:'F' },
   { id:'having_fun',      label:'Having fun',                cn:'开心享乐',       type:'E' },
   { id:'relaxing',        label:'Relaxing/chill',            cn:'放松心情',       type:'E' },
   { id:'adventurous',     label:'Adventurous',               cn:'探索/好奇心',    type:'E' },
@@ -297,7 +296,7 @@ const BRAND_DATA = {
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let selectedBrands = new Set(['qingdao','heineken','budweiser']);
-let selectedAttrs  = new Set(['knowledgeable','having_fun','relaxing','adventurous','goes_food','stylish','category_leader']);
+let selectedAttrs  = new Set(['having_fun','relaxing','adventurous','goes_food','stylish','category_leader','celebrating']);
 let currentTab = 'industry';
 let attrPanelOpen = false;
 
@@ -431,7 +430,7 @@ function renderIndustry() {
     tooltip:{ trigger:'axis', backgroundColor:'#1e293b', borderColor:'#334155', textStyle:{color:'#e2e8f0',fontSize:11} },
     grid:{ left:80, right:50, top:8, bottom:24 },
     xAxis:{ type:'value', axisLabel:{color:'#475569',fontSize:10,formatter:v=>v+'%'}, splitLine:{lineStyle:{color:'#1e3a5f'}}, axisLine:{show:false} },
-    yAxis:{ type:'category', data:sorted.map(a=>a.cn), axisLabel:{color:'#94a3b8',fontSize:10}, axisTick:{show:false}, axisLine:{show:false} },
+    yAxis:{ type:'category', data:sorted.map(a=>a.cn), axisLabel:{color:'#94a3b8',fontSize:10}, axisTick:{show:false}, axisLine:{show:false}, inverse:true },
     series:[{ type:'bar', barMaxWidth:14,
       data:sorted.map(a=>({ value:+industryAvg(a.id).toFixed(2), itemStyle:{color:a.type==='E'?'#7c3aed':'#0369a1',borderRadius:[0,4,4,0]} })),
       label:{show:true,position:'right',color:'#64748b',fontSize:9,formatter:p=>p.value+'%'}
@@ -456,7 +455,7 @@ function renderIndustry() {
   });
 
   // Heatmap
-  const hA = ATTRS_DEF.slice(0,10), hB = BRANDS;
+  const hA = [...ATTRS_DEF].sort((a,b)=>industryAvg(a.id)-industryAvg(b.id)).slice(0,10), hB = BRANDS;
   const hData = [];
   hB.forEach((b,bi)=>hA.forEach((a,ai)=>hData.push([bi,ai,+((BRAND_DATA[b.id][a.id]||0).toFixed(1))])));
   const c3 = initChart('chart-industry-heatmap');
