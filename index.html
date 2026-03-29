@@ -154,6 +154,7 @@
   <div class="tab active" onclick="switchTab('industry')">🌐 行业全景</div>
   <div class="tab" onclick="switchTab('brand')">🎯 品牌诊断</div>
   <div class="tab" onclick="switchTab('compare')">⚡ 竞品对比</div>
+  <div class="tab" onclick="switchTab('trend')">📈 趋势追踪</div>
 </div>
 
 <!-- Mobile filter bar: brand chips -->
@@ -252,6 +253,30 @@
         <div class="card-title">品牌 Attribute 明细对比</div>
         <div class="card-sub">TGI 绿色=优势 红色=缺口</div>
         <div class="compare-wrap" id="compare-table-wrap"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-trend">
+      <div class="card">
+        <div class="card-title">Brand Attributes 周趋势</div>
+        <div class="card-sub">选定品牌在关键 Attributes 上的周度曝光占比变化 vs 竞品</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;">
+          <span style="font-size:11px;color:#64748b;white-space:nowrap;">选 Attribute：</span>
+          <select id="trend-attr-sel" style="background:#0f172a;border:1px solid #1e3a5f;color:#e2e8f0;padding:5px 10px;border-radius:6px;font-size:12px;" onchange="renderTrend()"></select>
+          <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">时间范围：</span>
+          <select id="trend-week-sel" style="background:#0f172a;border:1px solid #1e3a5f;color:#e2e8f0;padding:5px 10px;border-radius:6px;font-size:12px;" onchange="renderTrend()">
+            <option value="4">近4周</option>
+            <option value="8">近8周</option>
+            <option value="12" selected>近12周</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="trend-brand-pills"></div>
+        <div class="chart-box xtall" id="chart-trend-line"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Attribute 变化排行（近4周 vs 前4周）</div>
+        <div class="card-sub">各品牌在所选 Attribute 上的环比变化幅度</div>
+        <div class="chart-box tall" id="chart-trend-delta"></div>
       </div>
     </div>
   </div>
@@ -393,6 +418,80 @@ function toggleAttrs() {
   document.getElementById('attrPanel').classList.toggle('open', attrPanelOpen);
   document.getElementById('toggleAttrsBtn').classList.toggle('open', attrPanelOpen);
 }
+
+// ── Trend ──
+const WEEKS = ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"];
+const TREND = {"qingdao": {"having_fun": [9.0, 8.33, 8.01, 7.62, 7.95, 8.2, 8.75, 8.17, 8.06, 7.4, 7.01, 7.01], "relaxing": [8.87, 8.41, 8.64, 8.71, 8.28, 8.42, 8.89, 8.13, 8.6, 8.91, 8.66, 8.13], "adventurous": [20.93, 20.42, 19.15, 17.89, 18.97, 19.3, 20.25, 20.97, 21.08, 22.56, 22.18, 22.34], "goes_food": [7.37, 7.5, 7.91, 7.99, 8.22, 7.71, 7.41, 7.17, 6.7, 6.4, 5.96, 5.71], "stylish": [3.17, 3.1, 3.04, 2.89, 2.78, 2.99, 3.07, 3.12, 2.96, 3.07, 2.9, 2.84], "category_leader": [2.37, 2.42, 2.44, 2.51, 2.63, 2.72, 2.63, 2.46, 2.4, 2.32, 2.22, 2.37], "celebrating": [1.59, 1.55, 1.58, 1.56, 1.66, 1.65, 1.59, 1.53, 1.55, 1.49, 1.51, 1.6], "thirst": [0.98, 0.94, 1.02, 1.02, 0.95, 0.88, 0.82, 0.84, 0.89, 0.87, 0.8, 0.79], "premium": [0.86, 0.87, 0.93, 0.97, 0.91, 0.94, 0.96, 0.97, 0.94, 0.96, 0.91, 0.9], "moment_special": [1.19, 1.28, 1.35, 1.3, 1.31, 1.24, 1.32, 1.39, 1.36, 1.38, 1.4, 1.34], "affordable": [1.04, 1.05, 1.09, 1.1, 1.02, 0.99, 0.91, 0.98, 1.04, 1.1, 1.06, 0.99], "easy_mix": [0.53, 0.57, 0.53, 0.53, 0.5, 0.52, 0.54, 0.51, 0.51, 0.51, 0.49, 0.52], "intl_brand": [0.3, 0.28, 0.28, 0.3, 0.28, 0.27, 0.3, 0.3, 0.3, 0.3, 0.28, 0.27], "reducing_stress": [0.49, 0.49, 0.47, 0.45, 0.42, 0.43, 0.4, 0.44, 0.47, 0.43, 0.41, 0.42]}, "carlsberg": {"having_fun": [4.29, 4.03, 4.34, 4.39, 4.37, 4.58, 4.8, 4.58, 4.29, 4.24, 4.18, 4.16], "relaxing": [2.59, 2.66, 2.85, 2.69, 2.66, 2.59, 2.74, 2.63, 2.51, 2.49, 2.46, 2.37], "adventurous": [1.44, 1.54, 1.53, 1.61, 1.63, 1.52, 1.64, 1.72, 1.83, 1.93, 2.02, 1.94], "goes_food": [2.0, 1.9, 1.87, 1.73, 1.69, 1.85, 1.77, 1.86, 1.85, 1.82, 1.97, 2.13], "stylish": [2.02, 2.09, 1.98, 1.91, 2.06, 2.09, 2.1, 2.18, 2.04, 2.07, 2.07, 2.18], "category_leader": [3.4, 3.67, 3.43, 3.25, 3.3, 3.4, 3.25, 3.03, 3.25, 3.11, 3.16, 3.23], "celebrating": [1.18, 1.2, 1.2, 1.29, 1.23, 1.27, 1.22, 1.2, 1.24, 1.2, 1.16, 1.21], "thirst": [7.45, 7.4, 8.04, 8.67, 8.13, 7.76, 7.46, 8.01, 8.5, 8.99, 8.82, 8.38], "premium": [1.05, 1.09, 1.1, 1.18, 1.21, 1.13, 1.18, 1.15, 1.17, 1.24, 1.18, 1.12], "moment_special": [0.75, 0.76, 0.73, 0.74, 0.77, 0.73, 0.75, 0.72, 0.72, 0.77, 0.81, 0.76], "affordable": [2.67, 2.57, 2.36, 2.47, 2.53, 2.43, 2.53, 2.56, 2.52, 2.31, 2.13, 2.3], "easy_mix": [11.5, 11.58, 12.15, 12.3, 11.69, 11.05, 10.71, 11.4, 11.92, 12.54, 13.23, 12.73], "intl_brand": [1.44, 1.34, 1.41, 1.5, 1.48, 1.51, 1.43, 1.53, 1.62, 1.73, 1.81, 1.9], "reducing_stress": [0.46, 0.48, 0.47, 0.5, 0.53, 0.56, 0.58, 0.56, 0.58, 0.55, 0.58, 0.61]}, "heineken": {"having_fun": [13.86, 14.59, 14.5, 14.05, 14.73, 14.1, 12.99, 12.28, 11.88, 12.73, 13.81, 13.3], "relaxing": [4.09, 4.03, 4.33, 4.36, 4.64, 4.39, 4.69, 4.49, 4.78, 4.63, 4.38, 4.34], "adventurous": [2.59, 2.52, 2.56, 2.56, 2.52, 2.55, 2.45, 2.53, 2.33, 2.5, 2.52, 2.61], "goes_food": [3.64, 3.73, 3.66, 3.41, 3.51, 3.41, 3.31, 3.5, 3.62, 3.51, 3.41, 3.35], "stylish": [14.77, 14.28, 13.38, 13.19, 14.25, 14.67, 15.64, 15.92, 15.44, 15.55, 14.35, 13.84], "category_leader": [2.77, 2.8, 2.87, 2.86, 2.83, 2.7, 2.69, 2.87, 3.0, 2.86, 2.67, 2.68], "celebrating": [3.27, 3.18, 3.35, 3.48, 3.56, 3.42, 3.27, 3.03, 2.89, 2.88, 3.06, 2.84], "thirst": [1.48, 1.51, 1.44, 1.48, 1.48, 1.42, 1.46, 1.34, 1.4, 1.47, 1.37, 1.35], "premium": [1.14, 1.23, 1.23, 1.14, 1.09, 1.16, 1.15, 1.21, 1.24, 1.34, 1.36, 1.44], "moment_special": [1.06, 1.08, 1.12, 1.12, 1.17, 1.18, 1.24, 1.28, 1.28, 1.24, 1.2, 1.22], "affordable": [0.52, 0.52, 0.53, 0.52, 0.48, 0.46, 0.45, 0.43, 0.43, 0.41, 0.38, 0.4], "easy_mix": [0.83, 0.77, 0.76, 0.76, 0.75, 0.72, 0.71, 0.76, 0.77, 0.79, 0.84, 0.87], "intl_brand": [5.49, 5.05, 4.92, 5.14, 5.46, 5.87, 5.79, 6.02, 6.06, 6.15, 5.9, 5.65], "reducing_stress": [0.49, 0.46, 0.44, 0.46, 0.45, 0.42, 0.42, 0.39, 0.4, 0.36, 0.36, 0.36]}, "snow": {"having_fun": [5.08, 5.21, 4.89, 4.86, 4.46, 4.35, 4.1, 3.95, 4.18, 4.07, 4.29, 4.58], "relaxing": [4.32, 4.02, 3.67, 3.7, 4.06, 3.95, 4.06, 4.27, 4.37, 4.56, 4.88, 4.67], "adventurous": [6.0, 5.64, 5.25, 5.43, 5.49, 5.2, 5.41, 5.69, 5.34, 5.45, 5.71, 5.31], "goes_food": [9.46, 10.13, 9.56, 8.88, 8.61, 8.87, 9.53, 9.38, 9.69, 9.08, 9.35, 9.53], "stylish": [10.3, 10.78, 11.4, 11.57, 10.91, 11.76, 12.25, 11.99, 11.86, 11.63, 11.64, 11.36], "category_leader": [3.17, 3.32, 3.13, 3.35, 3.42, 3.58, 3.68, 3.65, 3.76, 3.98, 3.87, 4.02], "celebrating": [4.02, 4.01, 3.97, 4.12, 3.97, 4.2, 4.41, 4.14, 4.39, 4.22, 4.2, 4.27], "thirst": [1.96, 1.81, 1.92, 1.82, 1.73, 1.82, 1.77, 1.89, 1.96, 1.89, 1.73, 1.87], "premium": [18.3, 18.99, 18.95, 19.76, 20.36, 20.82, 20.79, 21.71, 20.43, 19.56, 20.16, 19.55], "moment_special": [8.91, 8.88, 8.92, 8.82, 9.16, 8.92, 9.21, 8.89, 8.54, 8.0, 7.57, 7.03], "affordable": [1.01, 1.05, 1.0, 0.95, 0.95, 0.99, 1.06, 1.07, 1.03, 0.97, 0.92, 0.87], "easy_mix": [1.42, 1.31, 1.31, 1.26, 1.37, 1.39, 1.43, 1.34, 1.43, 1.43, 1.52, 1.54], "intl_brand": [0.8, 0.79, 0.75, 0.69, 0.75, 0.74, 0.79, 0.77, 0.72, 0.73, 0.68, 0.63], "reducing_stress": [0.51, 0.49, 0.53, 0.5, 0.52, 0.53, 0.55, 0.53, 0.53, 0.53, 0.52, 0.55]}, "budweiser": {"having_fun": [12.29, 11.94, 12.16, 12.36, 12.8, 13.61, 13.08, 12.55, 12.85, 12.22, 11.63, 10.85], "relaxing": [1.84, 1.83, 1.86, 1.79, 1.7, 1.77, 1.83, 1.82, 1.88, 2.01, 2.11, 2.15], "adventurous": [1.54, 1.64, 1.62, 1.64, 1.67, 1.77, 1.85, 1.74, 1.66, 1.62, 1.68, 1.69], "goes_food": [1.74, 1.63, 1.69, 1.74, 1.87, 1.87, 1.87, 1.75, 1.62, 1.6, 1.54, 1.47], "stylish": [2.34, 2.52, 2.66, 2.69, 2.87, 3.07, 3.13, 3.04, 2.86, 2.96, 2.95, 3.01], "category_leader": [28.05, 26.71, 27.07, 27.64, 27.6, 25.88, 25.24, 24.54, 25.26, 26.76, 26.05, 26.86], "celebrating": [5.31, 5.71, 5.98, 6.03, 5.99, 5.82, 5.67, 6.08, 6.0, 6.01, 6.44, 6.58], "thirst": [1.01, 0.99, 0.94, 0.92, 0.96, 0.98, 1.02, 0.98, 0.98, 1.05, 1.04, 1.07], "premium": [0.47, 0.51, 0.52, 0.5, 0.47, 0.47, 0.48, 0.44, 0.48, 0.52, 0.51, 0.48], "moment_special": [0.84, 0.84, 0.87, 0.87, 0.84, 0.89, 0.95, 0.91, 0.92, 0.91, 0.96, 0.96], "affordable": [0.53, 0.56, 0.54, 0.56, 0.56, 0.59, 0.59, 0.62, 0.6, 0.59, 0.59, 0.63], "easy_mix": [0.3, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.27, 0.26, 0.27, 0.27, 0.26], "intl_brand": [1.04, 0.97, 1.01, 1.04, 1.09, 1.07, 1.1, 1.15, 1.23, 1.23, 1.15, 1.15], "reducing_stress": [3.14, 3.33, 3.51, 3.48, 3.5, 3.48, 3.59, 3.54, 3.62, 3.45, 3.43, 3.66]}, "corona": {"having_fun": [23.38, 24.12, 24.7, 26.05, 27.4, 28.78, 28.32, 27.61, 28.45, 29.45, 30.88, 29.1], "relaxing": [11.17, 11.42, 12.23, 13.19, 13.66, 13.53, 12.76, 13.02, 13.73, 13.63, 14.0, 14.77], "adventurous": [6.49, 6.82, 6.59, 6.45, 6.05, 6.09, 6.16, 6.49, 6.12, 5.65, 6.07, 6.2], "goes_food": [3.83, 4.1, 3.87, 3.85, 3.69, 3.53, 3.22, 3.41, 3.67, 3.78, 3.56, 3.53], "stylish": [7.8, 7.91, 8.09, 8.0, 7.68, 8.12, 7.73, 7.58, 7.56, 7.23, 7.32, 7.41], "category_leader": [0.54, 0.52, 0.56, 0.57, 0.56, 0.56, 0.58, 0.6, 0.56, 0.57, 0.57, 0.6], "celebrating": [9.66, 10.14, 10.31, 10.07, 10.29, 10.48, 10.77, 11.12, 11.38, 11.92, 12.12, 12.77], "thirst": [3.07, 2.98, 2.95, 2.99, 3.1, 2.9, 2.8, 2.92, 2.77, 2.59, 2.61, 2.84], "premium": [2.01, 2.14, 2.25, 2.17, 2.27, 2.27, 2.37, 2.45, 2.39, 2.27, 2.42, 2.3], "moment_special": [21.49, 22.65, 23.36, 24.9, 26.39, 27.37, 26.94, 27.87, 26.31, 26.43, 26.29, 26.84], "affordable": [0.51, 0.52, 0.55, 0.58, 0.55, 0.53, 0.49, 0.52, 0.53, 0.56, 0.54, 0.5], "easy_mix": [1.05, 1.12, 1.09, 1.07, 1.01, 1.08, 1.05, 1.05, 0.99, 1.05, 0.99, 0.98], "intl_brand": [1.03, 1.07, 1.14, 1.12, 1.16, 1.11, 1.09, 1.03, 1.03, 1.01, 1.09, 1.01], "reducing_stress": [2.45, 2.43, 2.61, 2.75, 2.59, 2.66, 2.68, 2.87, 2.81, 2.77, 2.65, 2.5]}, "tsingtao": {"having_fun": [9.5, 9.44, 9.67, 9.87, 10.01, 9.33, 9.74, 9.37, 8.83, 8.92, 8.3, 8.68], "relaxing": [6.67, 6.35, 6.77, 6.58, 6.18, 6.63, 6.07, 6.47, 6.08, 5.66, 5.38, 5.02], "adventurous": [8.21, 7.6, 6.98, 7.35, 7.01, 6.79, 6.37, 5.8, 6.11, 6.14, 6.46, 6.43], "goes_food": [12.53, 12.56, 11.81, 11.82, 12.67, 11.79, 12.34, 13.04, 13.08, 13.0, 13.89, 13.05], "stylish": [4.98, 4.9, 5.05, 5.05, 5.37, 5.03, 4.7, 4.78, 4.44, 4.26, 4.36, 4.4], "category_leader": [3.89, 4.2, 4.22, 4.19, 4.26, 4.01, 4.13, 4.36, 4.46, 4.63, 4.77, 4.59], "celebrating": [5.95, 5.69, 5.54, 5.49, 5.41, 5.02, 4.95, 5.11, 4.99, 4.66, 5.06, 4.65], "thirst": [3.69, 3.46, 3.23, 3.37, 3.54, 3.57, 3.62, 3.65, 3.56, 3.35, 3.27, 3.36], "premium": [2.08, 2.2, 2.27, 2.42, 2.45, 2.4, 2.43, 2.34, 2.39, 2.3, 2.17, 2.28], "moment_special": [2.94, 3.06, 3.1, 3.25, 3.41, 3.64, 3.79, 3.85, 3.91, 3.69, 3.89, 4.05], "affordable": [2.89, 2.73, 2.83, 2.74, 2.66, 2.43, 2.6, 2.64, 2.59, 2.42, 2.48, 2.26], "easy_mix": [2.08, 1.99, 1.96, 1.91, 1.87, 1.94, 2.03, 2.05, 1.92, 1.77, 1.66, 1.7], "intl_brand": [1.03, 0.99, 1.02, 1.01, 1.01, 0.97, 1.01, 0.95, 0.94, 0.9, 0.93, 0.93], "reducing_stress": [1.03, 0.95, 0.94, 0.95, 0.87, 0.84, 0.8, 0.74, 0.7, 0.67, 0.59, 0.63]}};
+let trendBrands = new Set(['budweiser','heineken','corona']);
+
+function initTrendAttrSel(){
+  const sel = document.getElementById('trend-attr-sel');
+  if(sel.options.length > 0) return;
+  ATTRS_DEF.forEach(a=>{
+    const opt = document.createElement('option');
+    opt.value = a.id; opt.textContent = a.cn + ' · ' + a.label;
+    sel.appendChild(opt);
+  });
+  sel.value = 'having_fun';
+}
+
+function initTrendBrandPills(){
+  const el = document.getElementById('trend-brand-pills');
+  el.innerHTML = '';
+  BRANDS.forEach(b=>{
+    const on = trendBrands.has(b.id);
+    const pill = document.createElement('div');
+    pill.style.cssText = `cursor:pointer;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid ${b.color};color:${on?'#0f172a':b.color};background:${on?b.color:'transparent'};transition:all 0.15s`;
+    pill.textContent = b.name;
+    pill.onclick = ()=>{ trendBrands.has(b.id)?trendBrands.delete(b.id):trendBrands.add(b.id); initTrendBrandPills(); renderTrend(); };
+    el.appendChild(pill);
+  });
+}
+
+function renderTrend(){
+  const attrId = document.getElementById('trend-attr-sel').value;
+  const nWeeks = parseInt(document.getElementById('trend-week-sel').value);
+  const weeks = WEEKS.slice(12-nWeeks);
+  const brands = BRANDS.filter(b=>trendBrands.has(b.id));
+
+  const c1 = initChart('chart-trend-line');
+  c1.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0',fontSize:11},
+      formatter:params=>{ let s=`<b>${params[0].axisValue}</b><br/>`; params.sort((a,b)=>b.value-a.value).forEach(p=>{s+=`${p.marker}${p.seriesName}: <b>${p.value.toFixed(1)}%</b><br/>`}); return s; }
+    },
+    legend:{top:0,textStyle:{color:'#94a3b8',fontSize:11},icon:'circle',itemWidth:8},
+    grid:{top:36,bottom:28,left:14,right:14,containLabel:true},
+    xAxis:{type:'category',data:weeks,axisLabel:{color:'#64748b',fontSize:10},axisLine:{lineStyle:{color:'#1e3a5f'}},axisTick:{show:false}},
+    yAxis:{type:'value',axisLabel:{color:'#64748b',fontSize:10,formatter:v=>v+'%'},splitLine:{lineStyle:{color:'#1e3a5f55'}}},
+    series: brands.map(b=>{
+      const vals = (TREND[b.id]||{})[attrId]||[];
+      return { name:b.name,type:'line',smooth:true,data:vals.slice(12-nWeeks),
+        lineStyle:{color:b.color,width:2.5},itemStyle:{color:b.color},symbolSize:5,areaStyle:{color:b.color+'18'} };
+    })
+  });
+
+  const c2 = initChart('chart-trend-delta');
+  const dList = BRANDS.map(b=>{
+    const v=(TREND[b.id]||{})[attrId]||[];
+    const r=v.slice(8).reduce((s,x)=>s+x,0)/4, p=v.slice(4,8).reduce((s,x)=>s+x,0)/4;
+    return {b,d:+(r-p).toFixed(2)};
+  }).sort((a,b)=>b.d-a.d);
+  c2.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',backgroundColor:'#1e293b',borderColor:'#334155',textStyle:{color:'#e2e8f0',fontSize:11},
+      formatter:p=>`${p[0].name}: ${p[0].value>=0?'+':''}${p[0].value.toFixed(2)}%`
+    },
+    grid:{top:10,bottom:10,left:10,right:60,containLabel:true},
+    xAxis:{type:'value',axisLabel:{color:'#64748b',fontSize:10,formatter:v=>(v>0?'+':'')+v+'%'},splitLine:{lineStyle:{color:'#1e3a5f55'}}},
+    yAxis:{type:'category',data:dList.map(d=>d.b.name),axisLabel:{color:'#94a3b8',fontSize:11},axisTick:{show:false},axisLine:{show:false}},
+    series:[{type:'bar',barMaxWidth:16,
+      data:dList.map(d=>{const up=d.d>=0; return {value:d.d,itemStyle:{color:up?'#22c55e':'#ef4444',borderRadius:up?[0,4,4,0]:[4,0,0,4]}}}),
+      label:{show:true,position:'right',color:'#94a3b8',fontSize:10,formatter:p=>(p.value>=0?'+':'')+p.value.toFixed(1)+'%'}
+    }]
+  });
+}
+
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',['industry','brand','compare'][i]===tab));
@@ -617,13 +716,14 @@ function renderCompare() {
 
 // ─── RENDER ALL ──────────────────────────────────────────────────────────────
 function renderAll() {
-  if (currentTab === 'industry') renderIndustry();
+  if (currentTab === 'industry') renderIndustry(); initTrendAttrSel(); initTrendBrandPills(); renderTrend();
   if (currentTab === 'brand')    renderBrand();
   if (currentTab === 'compare')  renderCompare();
+  if (currentTab === 'trend')   { initTrendAttrSel(); initTrendBrandPills(); renderTrend(); }
 }
 
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
-const ALL_CHARTS = ['chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
+const ALL_CHARTS = ['chart-trend-line','chart-trend-delta','chart-industry-bar','chart-industry-ef','chart-industry-heatmap',
    'chart-brand-radar','chart-brand-tgi','chart-compare-bar','chart-compare-scatter'];
 window.addEventListener('resize', () => {
   ALL_CHARTS.forEach(id=>{
@@ -634,7 +734,7 @@ window.addEventListener('resize', () => {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 renderControls();
-renderIndustry();
+renderIndustry(); initTrendAttrSel(); initTrendBrandPills(); renderTrend();
 </script>
 </body>
 </html>
