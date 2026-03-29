@@ -748,10 +748,14 @@ function renderCompare() {
 
 // ─── RENDER ALL ──────────────────────────────────────────────────────────────
 function renderAll() {
-  if (currentTab === 'industry') renderIndustry(); initTrendAttrSel(); initTrendBrandPills(); renderTrend();
+  if (currentTab === 'industry') renderIndustry();
   if (currentTab === 'brand')    renderBrand();
   if (currentTab === 'compare')  renderCompare();
-  if (currentTab === 'trend')   { initTrendAttrSel(); initTrendBrandPills(); renderTrend(); }
+  if (currentTab === 'trend') {
+    initTrendAttrSel();
+    initTrendBrandPills();
+    renderTrend();
+  }
 }
 
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
@@ -766,7 +770,7 @@ window.addEventListener('resize', () => {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 renderControls();
-renderIndustry(); initTrendAttrSel(); initTrendBrandPills(); renderTrend();
+renderIndustry();
 </script>
 </body>
 </html>
